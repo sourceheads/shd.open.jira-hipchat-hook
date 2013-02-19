@@ -1,0 +1,15 @@
+## @vtlvariable name="baseUrl" type="java.lang.String"
+## @vtlvariable name="json" type="org.sourceheads.open.jhch.VelocityJsonHelper"
+#set ($event = $json.get("webhookEvent"))##
+<img src="$json.getUrl("issue.fields.issuetype.iconUrl")"/>&nbsp;##
+<strong><a href="${baseUrl}/browse/${json.get("issue.key")}">$json.get("issue.key")</a></strong> ##
+- <img src="$json.getUrl("issue.fields.priority.iconUrl")"/>&nbsp;##
+<strong>$json.get("issue.fields.summary")</strong> ##
+#if ($event == "jira:issue_created")##
+created##
+#elseif ($event == "jira:issue_updated")##
+updated##
+#end
+ by ##
+<img src="$json.getUrl("user.avatarUrls.16x16")"/>&nbsp;##
+<strong><a href="$baseUrl/secure/ViewProfile.jspa?name=$json.get("user.name")">$json.get("user.name")</a></strong>.

@@ -1,0 +1,9 @@
+## @vtlvariable name="json" type="org.sourceheads.open.jhch.VelocityJsonHelper"
+#set ($event = $json.get("webhookEvent"))##
+$json.get("issue.key") - $json.get("issue.fields.summary") ##
+#if ($event == "jira:issue_created")##
+created##
+#elseif ($event == "jira:issue_updated")##
+updated##
+#end
+ by $json.get("user.name").
