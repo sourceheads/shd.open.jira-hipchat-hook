@@ -51,10 +51,12 @@ public class ConversionServlet extends HttpServlet {
         final Properties properties = new Properties();
         properties.load(getClass().getClassLoader().getResourceAsStream("/config/" + config + ".properties"));
 
-        //
+        // build json model
 
         final JsonModel jsonModel = JsonModel.model(request.getInputStream());
-        LOGGER.info("doPostInternal | json={}", jsonModel.toJson());
+        LOGGER.debug("doPostInternal | json={}", jsonModel.toJson());
+
+        // render velocity template
 
         final VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.setProperty("resource.loader", "class");
@@ -76,8 +78,9 @@ public class ConversionServlet extends HttpServlet {
         template.merge(velocityContext, writer);
 
         final String message = writer.toString().trim();
-        LOGGER.info("doPostInternal | message={}", message);
+        LOGGER.debug("doPostInternal | message={}", message);
 
+        // call hipchat api
 
         final StringBuilder buf = new StringBuilder();
         buf.append("room_id=").append(URLEncoder.encode(properties.getProperty("hipchat.roomId"), "UTF-8"));
@@ -88,7 +91,7 @@ public class ConversionServlet extends HttpServlet {
         buf.append("&color=").append(URLEncoder.encode(properties.getProperty("hipchat.color"), "UTF-8"));
 
         final String params = buf.toString();
-        LOGGER.info("doPostInternal | params={}", params);
+        LOGGER.debug("doPostInternal | params={}", params);
 
         final URL hipChatUrl = new URL("https://api.hipchat.com/v1/rooms/message?format=json&auth_token=" +
                 properties.getProperty("hipchat.apiToken"));
@@ -105,8 +108,10 @@ public class ConversionServlet extends HttpServlet {
 
         final InputStream inputStream = connection.getInputStream();
         final String result = IOUtils.toString(inputStream);
-        LOGGER.info("doPostInternal | result={}", result);
+        LOGGER.debug("doPostInternal | result={}", result);
 
         connection.disconnect();
+
+        LOGGER.info("doPostInternal | sent message: config={}; message={}; result={}", config, message, result);
     }
 }
