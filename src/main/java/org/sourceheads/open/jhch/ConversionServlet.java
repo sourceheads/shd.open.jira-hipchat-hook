@@ -97,6 +97,12 @@ public class ConversionServlet extends HttpServlet {
         final String message = writer.toString().trim();
         LOGGER.debug("doPostInternal | message={}", message);
 
+        if (message.isEmpty()) {
+            // do not send empty message
+            LOGGER.debug("runConfig | message is empty; skipping hipchat API call");
+            return;
+        }
+
         // call hipchat api
 
         final StringBuilder buf = new StringBuilder();
