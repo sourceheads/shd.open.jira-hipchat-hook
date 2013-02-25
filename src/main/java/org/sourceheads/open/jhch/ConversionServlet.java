@@ -30,12 +30,20 @@ import com.jayway.jsonpath.JsonModel;
  */
 public class ConversionServlet extends HttpServlet {
 
+    public static final String ENCODING_UTF8 = "UTF-8";
+
+    public static final String PARAM_CONFIG = "config";
+
+    public static final String CONFIG_PREFIX = "/config/";
+    public static final String CONFIG_SUFFIX = ".properties";
+
+    public static final String HIPCHAT_URL_V1 = "https://api.hipchat.com/v1";
+    public static final String HIPCHAT_URL_ROOMS_MESSAGE = HIPCHAT_URL_V1 + "/rooms/message";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConversionServlet.class);
 
     @Override
-    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp)
-            throws ServletException, IOException {
-
+    protected void doPost(final HttpServletRequest req, final HttpServletResponse resp) {
         try {
             doPostInternal(req, resp);
         }
@@ -47,9 +55,18 @@ public class ConversionServlet extends HttpServlet {
     protected void doPostInternal(final HttpServletRequest request, final HttpServletResponse response)
             throws ServletException, IOException {
 
-        final String config = request.getParameter("config");
-        final Properties properties = new Properties();
-        properties.load(getClass().getClassLoader().getResourceAsStream("/config/" + config + ".properties"));
+        final String[] configNames = request.getParameterValues(PARAM_CONFIG);
+        for (final String configName : configNames) {
+            final Properties config = new Properties();
+            final InputStream configStream = getClass().getClassLoader().getResourceAsStream(
+                    CONFIG_PREFIX + configName + CONFIG_SUFFIX);
+            config.load(configStream);
+            runConfig(config, request, response);
+        }
+    }
+
+    protected void runConfig(final Properties config, final HttpServletRequest request,
+            final HttpServletResponse response) throws ServletException, IOException {
 
         // build json model
 
@@ -74,7 +91,7 @@ public class ConversionServlet extends HttpServlet {
 
         final StringWriter writer = new StringWriter();
 
-        final Template template = velocityEngine.getTemplate(properties.getProperty("velocity.template"));
+        final Template template = velocityEngine.getTemplate(config.getProperty("velocity.template"));
         template.merge(velocityContext, writer);
 
         final String message = writer.toString().trim();
@@ -83,18 +100,18 @@ public class ConversionServlet extends HttpServlet {
         // call hipchat api
 
         final StringBuilder buf = new StringBuilder();
-        buf.append("room_id=").append(URLEncoder.encode(properties.getProperty("hipchat.roomId"), "UTF-8"));
-        buf.append("&from=").append(URLEncoder.encode(properties.getProperty("hipchat.from"), "UTF-8"));
-        buf.append("&message=").append(URLEncoder.encode(message, "UTF-8"));
-        buf.append("&message_format=").append(URLEncoder.encode(properties.getProperty("hipchat.messageFormat"), "UTF-8"));
-        buf.append("&notify=").append(URLEncoder.encode(properties.getProperty("hipchat.notify"), "UTF-8"));
-        buf.append("&color=").append(URLEncoder.encode(properties.getProperty("hipchat.color"), "UTF-8"));
+        buf.append("room_id=").append(getConfig(config, "hipchat.roomId"));
+        buf.append("&from=").append(getConfig(config, "hipchat.from"));
+        buf.append("&message=").append(URLEncoder.encode(message, ENCODING_UTF8));
+        buf.append("&message_format=").append(getConfig(config, "hipchat.messageFormat"));
+        buf.append("&notify=").append(getConfig(config, "hipchat.notify"));
+        buf.append("&color=").append(getConfig(config, "hipchat.color"));
 
         final String params = buf.toString();
         LOGGER.debug("doPostInternal | params={}", params);
 
-        final URL hipChatUrl = new URL("https://api.hipchat.com/v1/rooms/message?format=json&auth_token=" +
-                properties.getProperty("hipchat.apiToken"));
+        final URL hipChatUrl = new URL(HIPCHAT_URL_ROOMS_MESSAGE + "?format=json&auth_token=" +
+                getConfig(config, "hipchat.apiToken"));
         final HttpURLConnection connection = (HttpURLConnection) hipChatUrl.openConnection();
         connection.setDoOutput(true);
 
@@ -112,6 +129,10 @@ public class ConversionServlet extends HttpServlet {
 
         connection.disconnect();
 
-        LOGGER.info("doPostInternal | sent message: config={}; message={}; result={}", config, message, result);
+        LOGGER.info("doPostInternal | sent message: message={}; result={}", message, result);
+    }
+
+    protected String getConfig(final Properties config, final String key) throws IOException {
+        return URLEncoder.encode(config.getProperty(key), ENCODING_UTF8);
     }
 }
