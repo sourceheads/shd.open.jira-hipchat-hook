@@ -71,7 +71,7 @@ public class ConversionServlet extends HttpServlet {
         // build json model
 
         final JsonModel jsonModel = JsonModel.model(request.getInputStream());
-        LOGGER.debug("doPostInternal | json={}", jsonModel.toJson());
+        LOGGER.debug("runConfig | json={}", jsonModel.toJson());
 
         // render velocity template
 
@@ -95,7 +95,7 @@ public class ConversionServlet extends HttpServlet {
         template.merge(velocityContext, writer);
 
         final String message = writer.toString().trim();
-        LOGGER.debug("doPostInternal | message={}", message);
+        LOGGER.debug("runConfig | message={}", message);
 
         if (message.isEmpty()) {
             // do not send empty message
@@ -114,7 +114,7 @@ public class ConversionServlet extends HttpServlet {
         buf.append("&color=").append(getConfig(config, "hipchat.color"));
 
         final String params = buf.toString();
-        LOGGER.debug("doPostInternal | params={}", params);
+        LOGGER.debug("runConfig | params={}", params);
 
         final URL hipChatUrl = new URL(HIPCHAT_URL_ROOMS_MESSAGE + "?format=json&auth_token=" +
                 getConfig(config, "hipchat.apiToken"));
@@ -131,11 +131,11 @@ public class ConversionServlet extends HttpServlet {
 
         final InputStream inputStream = connection.getInputStream();
         final String result = IOUtils.toString(inputStream);
-        LOGGER.debug("doPostInternal | result={}", result);
+        LOGGER.debug("runConfig | result={}", result);
 
         connection.disconnect();
 
-        LOGGER.info("doPostInternal | sent message: message={}; result={}", message, result);
+        LOGGER.info("runConfig | sent message: message={}; result={}", message, result);
     }
 
     protected String getConfig(final Properties config, final String key) throws IOException {
