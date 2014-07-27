@@ -73,6 +73,17 @@ public class ConversionServlet extends HttpServlet {
         final JsonModel jsonModel = JsonModel.model(request.getInputStream());
         LOGGER.debug("runConfig | json={}", jsonModel.toJson());
 
+        // check is issue's key matches config
+
+        final String keyMatch = config.getProperty("jira.keyMatch");
+        if (keyMatch != null && !keyMatch.isEmpty()) {
+            final String issueKey = jsonModel.get("issue.key");
+            if (issueKey == null || !issueKey.matches(keyMatch)) {
+                LOGGER.debug("runConfig | config doesn't match issue key; skipping hipchat API call");
+                return;
+            }
+        }
+
         // render velocity template
 
         final VelocityEngine velocityEngine = new VelocityEngine();
