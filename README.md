@@ -14,12 +14,13 @@ to be sent to.
 * whenever jira calls the webhook the jira.properties config will be used to render a message and send it to hipchat
 * multiple configs can be triggered by adding them to the webhook url: eg.
 `http://yourserver:port/jira-hipchat-hook/convert?config=jira&config=another`
+* configs can be matched against issue keys with a regexp
 
 why?
 ----
 
 because the current hipchat plugin for jira requires modifications to the workflow; and the room is configured there,
-so multiple projects need separate workflows if you want to message different rooms. total no-go.
+so multiple projects need separate workflows if you want to message different rooms.
 
 disclaimer
 ----------
